@@ -1,5 +1,5 @@
 name: 'Sql-Lint'
-description: 'Use sql-lint to check sql file'
+description: 'Use sql-lint to check sql file. For sensitive data like passwords, use GitHub secrets instead of direct inputs.'
 inputs:
   path: 
     description: 'The path of sql file located'
@@ -10,11 +10,11 @@ inputs:
     required: false
     default: ''
   user: 
-    description: 'The user of sql database'
+    description: 'The user of sql database (use secrets for sensitive data)'
     required: false
     default: 'root'
   password: 
-    description: 'The password of sql database'
+    description: 'The password of sql database (use secrets for sensitive data)'
     required: false
     default: ''
   driver: 

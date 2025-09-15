@@ -1,17 +1,29 @@
 {
   "name": "sql-lint-in-action",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.0.2",
+  "description": "Secure GitHub Action for SQL linting with sql-lint",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "npx sql-lint index.js",
+    "security-audit": "npm audit",
+    "start": "node index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "github-action",
+    "sql",
+    "linting",
+    "security"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.6.0",
-    "@actions/github": "^5.0.0",
+    "@actions/core": "^1.10.1",
+    "@actions/github": "^6.0.0",
+    "minimist": "^1.2.8",
     "sql-lint": "^0.0.19"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
