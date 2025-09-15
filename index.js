@@ -8,77 +8,144 @@
 
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { exec,execSync } = require('child_process');
-const { existsSync,writeFileSync } = require('fs');
-const initbash = `sudo curl -L https://github.com/joereynolds/sql-lint/releases/latest/download/sql-lint-linux -o  /usr/local/bin/sql-lint &&
-sudo chmod +x /usr/local/bin/sql-lint &&
-sudo ln -s /usr/local/bin/sql-lint /usr/bin/sql-lint`
+const { exec, execSync } = require('child_process');
+const { existsSync, writeFileSync, unlinkSync } = require('fs');
+const path = require('path');
+const os = require('os');
+const minimist = require('minimist');
 
-function initconfig(host,user,password,driver='mysql',port=3306,ignore_errors=[]){
-		if (host==''){
-		config_data = {'host':host,'user':user,'password':password,'driver':driver,'port':parseInt(port),'ignore-errors':ignore_errors}
-		}else{
-		config_data = {'driver':driver,'port':parseInt(port),'ignore-errors':ignore_errors}
-		}
-		writeFileSync('/tmp/config.json',JSON.stringify(config_data),{flag: 'w',overwrite:true})
+// Parse CLI args like: node index.js --path ./test.sql --host localhost
+const argv = minimist(process.argv.slice(2));
+// Input validation and sanitization
+function validateInput(input, name, type = 'string') {
+  if (typeof input !== type) {
+    throw new Error(`Invalid ${name}: expected ${type}`);
+  }
+  if (type === 'string' && typeof input === 'string') {
+    // Sanitize input to prevent command injection
+    if (input.includes(';') || input.includes('|') || input.includes('&') || input.includes('`') || input.includes('$')) {
+      throw new Error(`Invalid characters in ${name}: potential command injection detected`);
+    }
+  }
+  return input;
 }
-function get_runbash(path,use_database){
-	if (use_database == true){
-		return `sql-lint ${path} --config=/tmp/config.json`
-	}
-	return `sql-lint ${path}`
+
+function validatePort(port) {
+  const portNum = parseInt(port);
+  if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+    throw new Error('Invalid port: must be a number between 1 and 65535');
+  }
+  return portNum;
 }
-function is_use_database(host){
-	if (host == ''){
-		return false
-	}
-	return true
+
+function initconfig(host, user, password, driver = 'mysql', port = 3306, ignore_errors = []) {
+  // Validate inputs
+  host = validateInput(host, 'host');
+  user = validateInput(user, 'user');
+  password = validateInput(password, 'password');
+  driver = validateInput(driver, 'driver');
+  port = validatePort(port);
+  
+  // Validate ignore_errors array
+  if (!Array.isArray(ignore_errors)) {
+    ignore_errors = [];
+  }
+  ignore_errors = ignore_errors.map(err => validateInput(err, 'ignore error'));
+  
+  const config_data = host ? 
+    { host, user, password, driver, port, 'ignore-errors': ignore_errors } :
+    { driver, port, 'ignore-errors': ignore_errors };
+    
+  const configPath = path.join(os.tmpdir(), 'sql-lint-config.json');
+  writeFileSync(configPath, JSON.stringify(config_data), { flag: 'w', overwrite: true });
+  return configPath;
+}
+function get_runbash(sqlPath, use_database, configPath) {
+  // Validate SQL file path
+  sqlPath = validateInput(sqlPath, 'SQL file path');
+  let cmd;
+  if (use_database) {
+    cmd= `npx sql-lint "${sqlPath}" --config="${configPath}"`;
+  }
+  cmd =  `npx sql-lint "${sqlPath}"`;
+  return cmd.trim();
+}
+function is_use_database(host) {
+  return host && host.trim() !== '';
+}
+
+function getInputFallback(name, required=false) {
+  try {
+    value = core.getInput(name) || argv[name] || '';
+  } catch (e) {
+    value = argv[name] || '';
+  }
+  if (required && !value) {
+      throw new Error(`❌ Missing required input: ${name}`);
+  }
+  return value;
+}
+
+// Cleanup function to remove temporary files
+function cleanup(configPath) {
+  try {
+    if (configPath && existsSync(configPath)) {
+      unlinkSync(configPath);
+      core.info('Temporary config file cleaned up');
+    }
+  } catch (error) {
+    core.warning(`Failed to cleanup temporary file: ${error.message}`);
+  }
 }
 try {
-  const path = core.getInput('path');
-	if (existsSync('/usr/local/bin/sql-lint')) {
-    console.log('Found ');
-	}
-	else{
-		execSync(initbash, (err, stdout, stderr) => {
-				if (err) {
-					core.setFailed(err.message);
-				}
-			console.log(`stdout: ${stdout}`);
-			if (stderr){
-				core.setFailed(`stderr: ${stderr}`);
-			}
-		});
-	}
-	const host = core.getInput('host', { required: false})
-	const user = core.getInput('user',{required: false})
-	const password = core.getInput('password',{required:false})
-	const driver = core.getInput('driver',{required:false})
-	const port = core.getInput('port',{required:false})
-	const ignore_errors = core.getInput('ignore_errors',{required:false}).split(',').filter((x)=>(x!=''))
-	initconfig(host,user,password,driver,port,ignore_errors)
-	const runbash = get_runbash(path,host=='')
-	exec("cat /tmp/config.json", (err, stdout, stderr) => {
-		if (err) {
-			core.setFailed(err.message);
+  // Get and validate inputs
+  const sqlPath = getInputFallback('path', true);
+  const host = getInputFallback('host');
+  const user = getInputFallback('user');
+  const password = getInputFallback('password');
+  const driver = getInputFallback('driver', false) || 'mysql';
+  const port = getInputFallback('port', false) || 3306;
+  const ignore_errors = getInputFallback('ignore_errors', false).split(',').filter(x => x !== '');
+    
+  
+  // Validate SQL file exists
+  if (!existsSync(sqlPath)) {
+    throw new Error(`SQL file not found: ${sqlPath}`);
   }
-
-		console.log(`stdout: ${stdout}`);
-		if (stderr){
-			core.setFailed(`stderr: ${stderr}`);
-		}
-	});
-	exec(runbash, (err, stdout, stderr) => {
-		if (err) {
-			core.setFailed(err.message);
-  }
-
-		console.log(`stdout: ${stdout}`);
-		if (stderr){
-			core.setFailed(`stderr: ${stderr}`);
-		}
-	});
-  // Get the JSON webhook payload for the event that triggered the workflow
+  
+  core.info(`Running sql-lint on: ${sqlPath}`);
+  
+  // Initialize configuration
+  const configPath = initconfig(host, user, password, driver, port, ignore_errors);
+  
+  const useDatabase = is_use_database(host);
+  // Run sql-lint using npm package (no sudo, no remote downloads)
+  const runCommand = get_runbash(sqlPath, useDatabase, configPath);
+  
+  exec(runCommand, (err, stdout, stderr) => {
+    // Always cleanup temporary files
+    
+    cleanup(configPath);
+    
+    if (err) {
+      core.setFailed(`sql-lint execution failed: ${err.message}`);
+      return;
+    }
+    
+    // Log output without sensitive data
+    if (stdout) {
+      core.info('sql-lint output:');
+      console.log(stdout);
+    }
+    
+    if (stderr) {
+      core.warning('sql-lint warnings:');
+      console.log(stderr);
+    }
+    
+    core.info('sql-lint completed successfully');
+  });
+  
 } catch (error) {
-  core.setFailed(error.message);
+  core.setFailed(`Action failed: ${error.message}`);
 }
