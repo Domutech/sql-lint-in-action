@@ -6,13 +6,13 @@
  */
 
 
-const core = require('@actions/core');
-const github = require('@actions/github');
-const { exec, execSync } = require('child_process');
-const { existsSync, writeFileSync, unlinkSync } = require('fs');
-const path = require('path');
-const os = require('os');
-const minimist = require('minimist');
+import core from '@actions/core';
+import github from '@actions/github';
+import { exec, execSync } from 'child_process';
+import { existsSync, writeFileSync, unlinkSync } from 'fs';
+import path from 'path';
+import os from 'os';
+import minimist from 'minimist';
 
 // Parse CLI args like: node index.js --path ./test.sql --host localhost
 const argv = minimist(process.argv.slice(2));
