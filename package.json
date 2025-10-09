@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Secure GitHub Action for SQL linting with sql-lint",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "npx sql-lint index.js",
     "security-audit": "npm audit",
-    "start": "node index.js"
+    "start": "node src/index.js"
   },
   "keywords": [
     "github-action",
