@@ -1,6 +1,7 @@
 {
   "name": "sql-lint-in-action",
-  "version": "0.0.2",
+  "version": "1.0.0",
+  "type": "module",
   "description": "Secure GitHub Action for SQL linting with sql-lint",
   "main": "index.js",
   "scripts": {
@@ -25,5 +26,10 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.2",
+    "rollup": "^4.52.4"
   }
 }
