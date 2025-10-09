@@ -56,6 +56,7 @@ Comma-separated list of errors to ignore. Default `""`.
 ## Example Usage
 
 ### Basic Usage
+
 ```yaml
 - name: SQL Lint
   uses: Bidaya0/sql-lint-in-action@v0.0.2
@@ -64,6 +65,7 @@ Comma-separated list of errors to ignore. Default `""`.
 ```
 
 ### With Database Connection (Secure)
+
 ```yaml
 - name: SQL Lint with Database
   uses: Bidaya0/sql-lint-in-action@v0.0.2
@@ -78,6 +80,7 @@ Comma-separated list of errors to ignore. Default `""`.
 ```
 
 ### CLI Usage
+
 ```bash
 node index.js --path ./test/test.sql --host localhost --user root --password secret --ignore_errors "missing-where"
 ```
