@@ -5,18 +5,37 @@ jobs:
     runs-on: ubuntu-latest
     name: building and testing the action
     steps:
+
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Build, using rollup
         run: |
           npm ci
           npm run build
+
       - name: Test action linting SQL without error
+        id: sql-lint
         uses: ./
         with:
           path: './test/test.sql'
+
+      - name: Display Results
+        run: |
+          echo "Lint Result: ${{ steps.sql-lint.outputs.result }}"
+          echo "Errors Found: ${{ steps.sql-lint.outputs.errors-found }}"
+          echo "Linted: ${{ steps.sql-lint.outputs.linting-target }}"
+          echo "Execution Time: ${{ steps.sql-lint.outputs.execution-time }}ms"
+
       - name: Test action linting SQL with error
+        id: sql-lint-error
         uses: ./
         continue-on-error: true
         with:
           path: './test/test1.sql'
+
+      - name: Display Results
+        run: |
+          echo "Lint Result: ${{ steps.sql-lint-error.outputs.result }}"
+          echo "Errors Found: ${{ steps.sql-lint-error.outputs.errors-found }}"
+          echo "Linted: ${{ steps.sql-lint-error.outputs.linting-target }}"
+          echo "Execution Time: ${{ steps.sql-lint-error.outputs.execution-time }}ms"
