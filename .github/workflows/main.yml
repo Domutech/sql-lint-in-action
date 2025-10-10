@@ -24,7 +24,7 @@ jobs:
           echo "Lint Result: ${{ steps.sql-lint.outputs.result }}"
           echo "Errors Found: ${{ steps.sql-lint.outputs.errors-found }}"
           echo "Linted: ${{ steps.sql-lint.outputs.linting-target }}"
-          echo "Execution Time: ${{ steps.sql-lint.outputs.execution-time }}ms"
+          echo "Execution Time: ${{ steps.sql-lint.outputs.execution-time }}"
 
       - name: Test action linting SQL with error
         id: sql-lint-error
@@ -38,4 +38,4 @@ jobs:
           echo "Lint Result: ${{ steps.sql-lint-error.outputs.result }}"
           echo "Errors Found: ${{ steps.sql-lint-error.outputs.errors-found }}"
           echo "Linted: ${{ steps.sql-lint-error.outputs.linting-target }}"
-          echo "Execution Time: ${{ steps.sql-lint-error.outputs.execution-time }}ms"
+          echo "Execution Time: ${{ steps.sql-lint-error.outputs.execution-time }}"
