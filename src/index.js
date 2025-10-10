@@ -101,10 +101,10 @@ function get_runbash(sqlPath, use_database, configPath) {
   sqlPath = validateInput(sqlPath, 'SQL file path');
   let cmd;
   if (use_database) {
-    cmd= `npx sql-lint "${sqlPath}" --config="${configPath}"`;
+    cmd= `npx sql-lint "${sqlPath}" --format=json --config="${configPath}"`;
     verboseLog(`Command with database config: ${cmd}`);
   } else {
-    cmd =  `npx sql-lint "${sqlPath}"`;
+    cmd =  `npx sql-lint "${sqlPath}" --format=json`;
     verboseLog(`Command without database: ${cmd}`);
   }
   return cmd.trim();
@@ -178,7 +178,7 @@ async function run() {
     // Initialize outputs with default values
     safeSetOutput('result', 'unknown');
     safeSetOutput('errors-found', '0');
-    safeSetOutput('linted-file', sqlPath);
+    safeSetOutput('linting-target', sqlPath);
     // Don't initialize execution-time here - let it be set only after actual execution
 
     const useDatabase = is_use_database(host);
@@ -217,11 +217,14 @@ async function run() {
     
     try {
       stdout = execSync(runCommand, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+      verboseLog('Command executed successfully (exit code 0)');
     } catch (error) {
       // execSync throws on non-zero exit codes, but we still want the output
       executionError = error;
       stdout = error.stdout || '';
       stderr = error.stderr || '';
+      verboseLog(`Command failed with exit code ${error.status}, but captured output`);
+      verboseLog(`Error stdout length: ${stdout.length}, stderr length: ${stderr.length}`);
     }
     
     // Calculate execution time
@@ -232,39 +235,77 @@ async function run() {
     // Always cleanup temporary files
     cleanup(configPath);
     
-    // Parse sql-lint output to count errors
+    // Parse sql-lint JSON output to count errors
     let errorCount = 0;
+    let sqlLintResults = [];
     
-    if (stdout) {
+    if (stdout && stdout.trim()) {
       verboseLog(`stdout length: ${stdout.length} characters`);
       verboseLog(`Raw stdout: ${JSON.stringify(stdout)}`);
       
-      // Count sql-lint issues using the actual pattern: [sql-lint: issue-type]
-      const sqlLintMatches = stdout.match(/\[sql-lint: [^\]]+\]/gi) || [];
-      errorCount = sqlLintMatches.length;
-      
-      verboseLog(`Found ${sqlLintMatches.length} sql-lint errors: ${sqlLintMatches.join(', ')}`);
+      try {
+        // Parse JSON output from sql-lint
+        const jsonOutput = JSON.parse(stdout.trim());
+        verboseLog(`Parsed JSON output: ${JSON.stringify(jsonOutput, null, 2)}`);
+        
+        if (Array.isArray(jsonOutput)) {
+          // Filter out duplicate entries and entries with empty sources
+          const validErrors = jsonOutput.filter(error => {
+            return error.source && error.source.trim() !== '';
+          });
+          
+          // Remove duplicates based on source, error, and line
+          const uniqueErrors = validErrors.filter((error, index, self) => {
+            return index === self.findIndex(e => 
+              e.source === error.source && 
+              e.error === error.error && 
+              e.line === error.line
+            );
+          });
+          
+          sqlLintResults = uniqueErrors;
+          errorCount = uniqueErrors.length;
+          
+          verboseLog(`Raw JSON entries: ${jsonOutput.length}`);
+          verboseLog(`Valid entries (non-empty source): ${validErrors.length}`);
+          verboseLog(`Unique errors after deduplication: ${errorCount}`);
+          
+          // Log details of each unique error for debugging
+          uniqueErrors.forEach((error, index) => {
+            verboseLog(`Error ${index + 1}: ${error.error} at line ${error.line} in ${error.source}`);
+          });
+        } else if (jsonOutput && typeof jsonOutput === 'object') {
+          verboseLog('JSON output is a single object, treating as single error');
+          sqlLintResults = [jsonOutput];
+          errorCount = 1;
+        } else {
+          verboseLog('Unexpected JSON structure');
+          errorCount = 0;
+        }
+      } catch (parseError) {
+        verboseLog(`Failed to parse JSON output: ${parseError.message}`);
+        verboseLog(`Attempted to parse: ${stdout.substring(0, 200)}...`);
+        verboseLog('Falling back to pattern matching...');
+        // Fallback to pattern matching if JSON parsing fails
+        const sqlLintMatches = stdout.match(/\[sql-lint: [^\]]+\]/gi) || [];
+        errorCount = sqlLintMatches.length;
+        verboseLog(`Found ${sqlLintMatches.length} sql-lint errors via pattern matching: ${sqlLintMatches.join(', ')}`);
+      }
       
       core.info('sql-lint output:');
       console.log(stdout);
     }
     
-    if (stderr) {
+    // Log stderr but don't count errors from it (to avoid double counting)
+    if (stderr && stderr.trim()) {
       verboseLog(`stderr length: ${stderr.length} characters`);
       verboseLog(`Raw stderr: ${JSON.stringify(stderr)}`);
-      
-      // Also check stderr for sql-lint patterns
-      const stderrSqlLint = stderr.match(/\[sql-lint: [^\]]+\]/gi) || [];
-      errorCount += stderrSqlLint.length;
-      
-      verboseLog(`Found ${stderrSqlLint.length} additional sql-lint errors in stderr: ${stderrSqlLint.join(', ')}`);
-      
       core.warning('sql-lint stderr:');
       console.log(stderr);
     }
     
     // Set all outputs
-    safeSetOutput('linted-file', sqlPath);
+    safeSetOutput('linting-target', sqlPath);
     safeSetOutput('execution-time', executionTime.toString() + ' ms');
     safeSetOutput('errors-found', errorCount.toString());
     

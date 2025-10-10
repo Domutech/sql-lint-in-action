@@ -74,7 +74,7 @@ The action provides the following outputs that can be used in subsequent workflo
 - **`result`**: The result of the sql-lint check (`success` or `failure`)
 - **`errors-found`**: Number of SQL errors found
 - **`warnings-found`**: Number of SQL warnings found  
-- **`linted-file`**: The path of the file that was linted
+- **`linting-target`**: The path of the file that was linted
 - **`execution-time`**: Time taken to execute sql-lint in milliseconds
 
 ## Example Usage
@@ -140,7 +140,7 @@ jobs:
           echo "Lint Result: ${{ steps.sql-lint.outputs.result }}"
           echo "Errors Found: ${{ steps.sql-lint.outputs.errors-found }}"
           echo "Warnings Found: ${{ steps.sql-lint.outputs.warnings-found }}"
-          echo "File Linted: ${{ steps.sql-lint.outputs.linted-file }}"
+          echo "File Linted: ${{ steps.sql-lint.outputs.linting-target }}"
           echo "Execution Time: ${{ steps.sql-lint.outputs.execution-time }}ms"
 
       - name: Comment PR with Results
@@ -157,7 +157,7 @@ jobs:
               - **Result**: ${{ steps.sql-lint.outputs.result }}
               - **Errors**: ${{ steps.sql-lint.outputs.errors-found }}
               - **Warnings**: ${{ steps.sql-lint.outputs.warnings-found }}
-              - **File**: ${{ steps.sql-lint.outputs.linted-file }}
+              - **File**: ${{ steps.sql-lint.outputs.linting-target }}
               - **Execution Time**: ${{ steps.sql-lint.outputs.execution-time }}ms`
             })
 
