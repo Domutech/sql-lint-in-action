@@ -25,7 +25,7 @@ import require$$1$4 from 'url';
 import require$$3$2 from 'zlib';
 import require$$6 from 'string_decoder';
 import require$$0$9 from 'diagnostics_channel';
-import require$$2$3, { exec as exec$1 } from 'child_process';
+import require$$2$3, { execSync } from 'child_process';
 import require$$6$1 from 'timers';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -31535,6 +31535,18 @@ function verboseLog(message) {
     coreExports.info(`[VERBOSE] ${message}`);
   }
 }
+
+// Safe output setter - handles local testing
+function safeSetOutput(name, value) {
+  try {
+    coreExports.setOutput(name, value);
+    verboseLog(`Output set: ${name} = ${value}`);
+  } catch (error) {
+    // When running locally, core.setOutput might fail
+    console.log(`OUTPUT: ${name}=${value}`);
+    verboseLog(`Local output: ${name} = ${value}`);
+  }
+}
 // Input validation and sanitization
 function validateInput(input, name, type = 'string') {
   if (typeof input !== type) {
@@ -31671,6 +31683,13 @@ async function run() {
     isVerbose = verbose === 'true' || verbose === true;
     
     verboseLog('Starting sql-lint-in-action...');
+    
+    // Initialize outputs with default values
+    safeSetOutput('result', 'unknown');
+    safeSetOutput('errors-found', '0');
+    safeSetOutput('warnings-found', '0');
+    safeSetOutput('linted-file', sqlPath);
+    // Don't initialize execution-time here - let it be set only after actual execution
 
     const useDatabase = is_use_database(host);
     verboseLog(`Database mode: ${useDatabase ? 'enabled' : 'disabled'}`);
@@ -31698,36 +31717,84 @@ async function run() {
     const runCommand = get_runbash(sqlPath, useDatabase, configPath);
     
     verboseLog(`Executing command: ${runCommand}`);
+    let startTime = Date.now();
+    verboseLog(`Start time: ${startTime}`);
     
-    exec$1(runCommand, (err, stdout, stderr) => {
-      // Always cleanup temporary files
-      cleanup(configPath);
+    // Execute command synchronously
+    let stdout = '';
+    let stderr = '';
+    let executionError = null;
+    
+    try {
+      stdout = execSync(runCommand, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+    } catch (error) {
+      // execSync throws on non-zero exit codes, but we still want the output
+      executionError = error;
+      stdout = error.stdout || '';
+      stderr = error.stderr || '';
+    }
+    
+    // Calculate execution time
+    const endTime = Date.now();
+    const executionTime = endTime - startTime;
+    verboseLog(`End time: ${endTime}, Execution time: ${executionTime}ms`);
+    
+    // Always cleanup temporary files
+    cleanup(configPath);
+    
+    // Parse sql-lint output to count errors
+    let errorCount = 0;
+    
+    if (stdout) {
+      verboseLog(`stdout length: ${stdout.length} characters`);
+      verboseLog(`Raw stdout: ${JSON.stringify(stdout)}`);
       
-      if (err) {
-        verboseLog(`Command execution failed: ${err.message}`);
-        coreExports.setFailed(`sql-lint execution failed: ${err.message}`);
-        return;
-      }
+      // Count sql-lint issues using the actual pattern: [sql-lint: issue-type]
+      const sqlLintMatches = stdout.match(/\[sql-lint: [^\]]+\]/gi) || [];
+      errorCount = sqlLintMatches.length;
       
+      verboseLog(`Found ${sqlLintMatches.length} sql-lint errors: ${sqlLintMatches.join(', ')}`);
+      
+      coreExports.info('sql-lint output:');
+      console.log(stdout);
+    }
+    
+    if (stderr) {
+      verboseLog(`stderr length: ${stderr.length} characters`);
+      verboseLog(`Raw stderr: ${JSON.stringify(stderr)}`);
+      
+      // Also check stderr for sql-lint patterns
+      const stderrSqlLint = stderr.match(/\[sql-lint: [^\]]+\]/gi) || [];
+      errorCount += stderrSqlLint.length;
+      
+      verboseLog(`Found ${stderrSqlLint.length} additional sql-lint errors in stderr: ${stderrSqlLint.join(', ')}`);
+      
+      coreExports.warning('sql-lint stderr:');
+      console.log(stderr);
+    }
+    
+    // Set all outputs
+    safeSetOutput('linted-file', sqlPath);
+    safeSetOutput('execution-time', executionTime.toString());
+    safeSetOutput('errors-found', errorCount.toString());
+    safeSetOutput('warnings-found', '0');  // sql-lint doesn't have warnings
+    
+    if (executionError) {
+      verboseLog(`Command execution failed: ${executionError.message}`);
+      verboseLog(`Parsed results - Errors: ${errorCount}, Time: ${executionTime}ms`);
+      safeSetOutput('result', 'failure');
+      coreExports.setFailed(`sql-lint execution failed: ${executionError.message}`);
+    } else {
       verboseLog('Command executed successfully');
-      
-      // Log output without sensitive data
-      if (stdout) {
-        verboseLog(`stdout length: ${stdout.length} characters`);
-        coreExports.info('sql-lint output:');
-        console.log(stdout);
-      }
-      
-      if (stderr) {
-        verboseLog(`stderr length: ${stderr.length} characters`);
-        coreExports.warning('sql-lint warnings:');
-        console.log(stderr);
-      }
-      
+      safeSetOutput('result', 'success');
+      verboseLog(`Analysis complete - Errors: ${errorCount}, Time: ${executionTime}ms`);
       verboseLog('sql-lint-in-action completed successfully');
-    });
+      coreExports.info('sql-lint completed successfully');
+    }
     
   } catch (error) {
+    safeSetOutput('result', 'failure');
+    safeSetOutput('execution-time', '0');
     coreExports.setFailed(`Action failed: ${error.message}`);
   }
 }

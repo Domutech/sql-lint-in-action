@@ -67,24 +67,34 @@ Comma-separated list of errors to ignore. Default `""`.
 
 Set to `"true"` to enable detailed logging for debugging purposes.
 
+## Outputs
+
+The action provides the following outputs that can be used in subsequent workflow steps:
+
+- **`result`**: The result of the sql-lint check (`success` or `failure`)
+- **`errors-found`**: Number of SQL errors found
+- **`warnings-found`**: Number of SQL warnings found  
+- **`linted-file`**: The path of the file that was linted
+- **`execution-time`**: Time taken to execute sql-lint in milliseconds
+
 ## Example Usage
 
 ### Basic Usage
 
 ```yaml
 - name: SQL Lint
-  uses: Bidaya0/sql-lint-in-action@v0.0.2
+  uses: Domutech/sql-lint-in-action@v1.0.0
   with:
-    path: './sql/'
+    path: './sql/test.sql'
 ```
 
 ### With Verbose Output
 
 ```yaml
 - name: SQL Lint
-  uses: Bidaya0/sql-lint-in-action@v0.0.2
+  uses: Domutech/sql-lint-in-action@v1.0.0
   with:
-    path: './sql/'
+    path: './sql/test.sql'
     verbose: 'true'
 ```
 
@@ -92,15 +102,109 @@ Set to `"true"` to enable detailed logging for debugging purposes.
 
 ```yaml
 - name: SQL Lint with Database
-  uses: Bidaya0/sql-lint-in-action@v0.0.2
+  uses: Domutech/sql-lint-in-action@v1.0.0
   with:
-    path: './sql/'
+    path: './sql/test.sql'
     host: ${{ secrets.DB_HOST }}
     user: ${{ secrets.DB_USER }}
     password: ${{ secrets.DB_PASSWORD }}
     driver: 'mysql'
     port: 3306
     ignore_errors: 'missing-where,trailing-whitespace'
+```
+
+### Using Outputs in Workflows
+
+```yaml
+name: SQL Quality Check
+
+on: [push, pull_request]
+
+jobs:
+  sql-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run SQL Lint
+        id: sql-lint
+        uses: Domutech/sql-lint-in-action@v1.0.0
+        with:
+          path: './database/migrations/001_create_users.sql'
+          verbose: 'true'
+          ignore_errors: 'trailing-whitespace'
+
+      - name: Display Results
+        run: |
+          echo "Lint Result: ${{ steps.sql-lint.outputs.result }}"
+          echo "Errors Found: ${{ steps.sql-lint.outputs.errors-found }}"
+          echo "Warnings Found: ${{ steps.sql-lint.outputs.warnings-found }}"
+          echo "File Linted: ${{ steps.sql-lint.outputs.linted-file }}"
+          echo "Execution Time: ${{ steps.sql-lint.outputs.execution-time }}ms"
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## SQL Lint Results 📊
+              
+              - **Result**: ${{ steps.sql-lint.outputs.result }}
+              - **Errors**: ${{ steps.sql-lint.outputs.errors-found }}
+              - **Warnings**: ${{ steps.sql-lint.outputs.warnings-found }}
+              - **File**: ${{ steps.sql-lint.outputs.linted-file }}
+              - **Execution Time**: ${{ steps.sql-lint.outputs.execution-time }}ms`
+            })
+
+      - name: Fail workflow if errors found
+        if: steps.sql-lint.outputs.errors-found != '0'
+        run: |
+          echo "❌ SQL errors found: ${{ steps.sql-lint.outputs.errors-found }}"
+          exit 1
+
+      - name: Performance Check
+        if: steps.sql-lint.outputs.execution-time > '5000'
+        run: |
+          echo "⚠️ SQL linting took longer than expected: ${{ steps.sql-lint.outputs.execution-time }}ms"
+```
+
+### Multiple SQL Files
+
+```yaml
+- name: Lint Multiple SQL Files  
+  strategy:
+    matrix:
+      sql-file: 
+        - './sql/schema.sql'
+        - './sql/migrations/001_users.sql'
+        - './sql/migrations/002_posts.sql'
+  steps:
+    - name: Lint ${{ matrix.sql-file }}
+      id: lint-${{ strategy.job-index }}
+      uses: Domutech/sql-lint-in-action@v1.0.0
+      with:
+        path: ${{ matrix.sql-file }}
+        verbose: 'true'
+```
+
+### With Database Testing
+
+```yaml
+- name: SQL Lint with Database Validation
+  uses: Domutech/sql-lint-in-action@v1.0.0
+  with:
+    path: './sql/test.sql'
+    host: 'localhost'
+    user: 'test_user'
+    password: ${{ secrets.DB_PASSWORD }}
+    driver: 'postgres'
+    port: 5432
+    verbose: 'true'
 ```
 
 ### CLI Usage

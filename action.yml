@@ -33,6 +33,15 @@ inputs:
     description: 'Enable verbose output for debugging'
     required: false
     default: 'false'
+outputs:
+  result:
+    description: 'The result of the sql-lint check (success/failure)'
+  errors-found:
+    description: 'Number of SQL errors found'
+  linted-file:
+    description: 'The path of the file that was linted'
+  execution-time:
+    description: 'Time taken to execute sql-lint in milliseconds'
 runs:
   using: 'node20'
   main: 'dist/index.js'
