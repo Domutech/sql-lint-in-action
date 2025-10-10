@@ -5,9 +5,11 @@
   "description": "Secure GitHub Action for SQL linting with sql-lint",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "INPUT_verbose='true' INPUT_path=./test/test.sql node src/index.js",
+    "build": "npx rollup -c rollup.config.js",
+    "testbuild": "INPUT_verbose='true' INPUT_path=./test/test.sql node dist/index.js",
     "lint": "npx sql-lint index.js",
-    "security-audit": "npm audit",
+    "security-audit": "npm audit --audit-level=moderate",
     "start": "node src/index.js"
   },
   "keywords": [
