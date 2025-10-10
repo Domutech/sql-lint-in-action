@@ -1,24 +1,6 @@
 # sql-lint-in-action
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/bidaya0/sql-lint-in-action?style=flat-square)
-![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/w/bidaya0/sql-lint-in-action/main?style=flat-square)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/joereynolds/sql-lint?style=flat-square)
-![Security](https://img.shields.io/badge/security-enhanced-green?style=flat-square)
-
 A GitHub Action for SQL linting with comprehensive input validation and security features. This action uses [sql-lint](https://github.com/joereynolds/sql-lint) to check your SQL scripts.
-
-## 🔒 Security Features
-
-- **Input Validation**: All inputs are sanitized to prevent command injection attacks
-- **Secure Data Handling**: Sensitive data should be passed via GitHub Secrets
-- **Temporary File Cleanup**: Automatic cleanup of configuration files
-- **Port Validation**: Strict validation of port numbers (1-65535)
-
-## 📚 Documentation
-
-- [**CHANGELOG.md**](CHANGELOG.md) - Version history and changes
-- [**SECURITY.md**](SECURITY.md) - Security policy and best practices
-- [**DEVELOPMENT.md**](DEVELOPMENT.md) - Development guide and architecture
 
 ## Inputs
 
@@ -83,7 +65,7 @@ The action provides the following outputs that can be used in subsequent workflo
 
 ```yaml
 - name: SQL Lint
-  uses: Domutech/sql-lint-in-action@v1.0.0
+  uses: Domutech/sql-lint-in-action@5db5dad730e61228599724e29215664fd16aa23c # v0.1.0
   with:
     path: './sql/test.sql'
 ```
@@ -92,7 +74,7 @@ The action provides the following outputs that can be used in subsequent workflo
 
 ```yaml
 - name: SQL Lint
-  uses: Domutech/sql-lint-in-action@v1.0.0
+  uses: Domutech/sql-lint-in-action@5db5dad730e61228599724e29215664fd16aa23c # v0.1.0
   with:
     path: './sql/test.sql'
     verbose: 'true'
@@ -102,7 +84,7 @@ The action provides the following outputs that can be used in subsequent workflo
 
 ```yaml
 - name: SQL Lint with Database
-  uses: Domutech/sql-lint-in-action@v1.0.0
+  uses: Domutech/sql-lint-in-action@5db5dad730e61228599724e29215664fd16aa23c # v0.1.0
   with:
     path: './sql/test.sql'
     host: ${{ secrets.DB_HOST }}
@@ -125,11 +107,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Run SQL Lint
         id: sql-lint
-        uses: Domutech/sql-lint-in-action@v1.0.0
+        uses: Domutech/sql-lint-in-action@5db5dad730e61228599724e29215664fd16aa23c # v0.1.0
         with:
           path: './database/migrations/001_create_users.sql'
           verbose: 'true'
@@ -145,7 +127,7 @@ jobs:
 
       - name: Comment PR with Results
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             github.rest.issues.createComment({
@@ -186,7 +168,7 @@ jobs:
   steps:
     - name: Lint ${{ matrix.sql-file }}
       id: lint-${{ strategy.job-index }}
-      uses: Domutech/sql-lint-in-action@v1.0.0
+      uses: Domutech/sql-lint-in-action@5db5dad730e61228599724e29215664fd16aa23c # v0.1.0
       with:
         path: ${{ matrix.sql-file }}
         verbose: 'true'
@@ -196,7 +178,7 @@ jobs:
 
 ```yaml
 - name: SQL Lint with Database Validation
-  uses: Domutech/sql-lint-in-action@v1.0.0
+  uses: Domutech/sql-lint-in-action@5db5dad730e61228599724e29215664fd16aa23c # v0.1.0
   with:
     path: './sql/test.sql'
     host: 'localhost'
@@ -232,12 +214,3 @@ Testing the built version:
 ```bash
 npm run testbuild
 ```
-
-## 🔐 Security Best Practices
-
-- **Use GitHub Secrets** for sensitive data like passwords and database hosts
-- **Validate SQL file paths** before using this action
-- **Keep the action updated** to receive security patches
-- **Review permissions** to ensure minimum required access
-
-See [SECURITY.md](SECURITY.md) for detailed security guidelines.
