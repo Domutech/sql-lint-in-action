@@ -2,36 +2,49 @@ name: 'Sql-Lint'
 description: 'Use sql-lint to check sql file. For sensitive data like passwords, use GitHub secrets instead of direct inputs.'
 inputs:
   path: 
-    description: 'The path of sql file located'
+    description: 'The path where SQL files are located'
     required: true
     default: '.'
   host: 
-    description: 'The host of sql host'
+    description: 'The host of a RDBMS database'
     required: false
     default: ''
   user: 
-    description: 'The user of sql database (use secrets for sensitive data)'
+    description: 'The user of a RDBMS database (use secrets for sensitive data)'
     required: false
     default: 'root'
   password: 
-    description: 'The password of sql database (use secrets for sensitive data)'
+    description: 'The password of a RDBMS database (use secrets for sensitive data)'
     required: false
     default: ''
   driver: 
-    description: 'The driver of sql database'
+    description: 'The driver of a RDBMS database'
     required: false
     default: 'mysql'
   port: 
-    description: 'The port of sql database'
+    description: 'The port of a RDBMS database'
     required: false
     default: 3306
   ignore_errors: 
-    description: 'The errors will be ignore'
+    description: 'Errors will be ignored'
     required: false
     default: ''
+  verbose: 
+    description: 'Enable verbose output for debugging'
+    required: false
+    default: 'false'
+outputs:
+  result:
+    description: 'The result of the sql-lint check (success/failure)'
+  errors-found:
+    description: 'Number of SQL errors found'
+  linting-target:
+    description: 'The path of what was linted'
+  execution-time:
+    description: 'Time taken to execute sql-lint in milliseconds'
 runs:
   using: 'node20'
-  main: 'index.js'
+  main: 'dist/index.js'
 branding:
   icon: 'check-square'  
   color: 'blue'
