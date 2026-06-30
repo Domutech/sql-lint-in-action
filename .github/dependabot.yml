@@ -1,0 +1,16 @@
+# Managed by Domutech domutech-github. Do not edit directly unless this repo is configured as seed-only.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "cron"
+      cronjob: "0 8 * * wed#1"
+      timezone: "Europe/Copenhagen"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
+
