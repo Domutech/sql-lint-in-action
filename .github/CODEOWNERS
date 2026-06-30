@@ -1,0 +1,11 @@
+# Managed by Domutech domutech-github.
+# Do not edit directly unless this repository is configured as seed-only.
+#
+# Order matters: the last matching rule wins.
+# Prefer teams over users for easier access management.
+
+# All files in the repository
+*   @Domutech/whiz-cloud-developers
+
+# Path-specific ownership
+/.github/**   @Domutech/operations
