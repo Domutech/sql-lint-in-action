@@ -14,3 +14,22 @@ updates:
     cooldown:
       default-days: 7
 
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "cron"
+      cronjob: "0 8 * * wed#1"
+      timezone: "Europe/Copenhagen"
+    cooldown:
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
+      default-days: 7
+    groups:
+      npm-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
