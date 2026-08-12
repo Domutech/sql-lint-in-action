@@ -57,7 +57,7 @@ The resulting `dependencies` block should read:
 
 Run: `npm install`
 
-This updates `package-lock.json` to resolve `@actions/core@3.0.1` and its new dependency tree, which adds `@actions/exec@^3.0.0` and `@actions/io@^3.0.2`, and upgrades `@actions/http-client` from `2.2.3` to `^4.0.0`.
+This updates `package-lock.json` to resolve `@actions/core@3.0.1` and its updated dependency tree, which upgrades `@actions/exec` from 1.1.1 to 3.0.0 and `@actions/io` from 1.1.3 to 3.0.2, upgrades `@actions/http-client` from `2.2.3` to `^4.0.0`, and drops the now-unneeded `@fastify/busboy` transitive dependency.
 
 - [ ] **Step 3: Confirm the version resolved correctly**
 

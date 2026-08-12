@@ -5,7 +5,9 @@
 After removing the unused `@actions/github` dependency
 (`2026-08-12-remove-unused-actions-github-design.md`), `npm audit` still
 reports one high-severity finding: `undici` (`<=6.27.0`), pulled in
-transitively via `@actions/core@^1.10.1` -> `@actions/http-client@2.2.3`.
+transitively via `@actions/core@^1.10.1` -> `@actions/http-client@2.2.3`
+(plus a moderate advisory on `@actions/http-client` itself for the same
+vulnerability).
 
 Unlike `@actions/github`, `@actions/core` is not dead code — it's used
 throughout `src/index.js` for `core.getInput`, `core.setOutput`,
@@ -49,10 +51,11 @@ direct jump are already confirmed clean by the trial run above.
 ## Changes
 
 1. `package.json` — `"@actions/core": "^1.10.1"` -> `"^3.0.1"`.
-2. Run `npm install` to regenerate `package-lock.json` with the new
-   dependency tree (`@actions/core@3.0.1` pulls in new transitive
-   dependencies `@actions/exec@^3.0.0` and `@actions/io@^3.0.2`, and
-   upgrades `@actions/http-client` to `^4.0.0`).
+2. Run `npm install` to regenerate `package-lock.json` with the updated
+   dependency tree (which upgrades `@actions/exec` from 1.1.1 to 3.0.0 and
+   `@actions/io` from 1.1.3 to 3.0.2, upgrades `@actions/http-client` to
+   `^4.0.0`, and drops the now-unneeded `@fastify/busboy` transitive
+   dependency).
 3. Run `npm run build` (rollup) to regenerate `dist/index.js`, since
    `action.yml` runs the bundled file (`dist/index.js`), not
    `src/index.js`, as the actual action entry point.
