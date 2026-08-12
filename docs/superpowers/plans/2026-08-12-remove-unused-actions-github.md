@@ -88,11 +88,11 @@ Run: `grep -c "actions/github\|getOctokit" dist/index.js`
 
 Expected: `0` (no matches). Before this change, `dist/index.js` contained bundled code like `github.getOctokit = github.context = void 0;` — confirm it's no longer present.
 
-- [ ] **Step 8: Run the existing smoke test**
+- [ ] **Step 8: Run the existing smoke test (built artifact)**
 
-Run: `npm test`
+Run: `npm run testbuild`
 
-This runs `INPUT_verbose='true' INPUT_path=./test/test.sql node src/index.js` (per the `test` script in `package.json`). Expected: exits successfully, sql-lint output printed, no errors about missing `@actions/github`.
+This runs `INPUT_verbose='true' INPUT_path=./test/test.sql node dist/index.js` (per the `testbuild` script in `package.json`). Expected: exits successfully, sql-lint output printed, no runtime errors from the bundled action.
 
 - [ ] **Step 9: Commit**
 
