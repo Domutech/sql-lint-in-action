@@ -62,7 +62,7 @@ The resulting `dependencies` block should read:
 
 Run: `npm install`
 
-This updates `package-lock.json`, dropping `@actions/github`, `undici`, and any packages that were only present to satisfy them (e.g. `@octokit/*` packages not required by `@actions/core`'s own dependency tree).
+This updates `package-lock.json`, dropping `@actions/github` and any packages that were only present to satisfy it (e.g. `@octokit/*` packages not required by `@actions/core`'s own dependency tree).
 
 - [ ] **Step 4: Confirm `@actions/github` is gone from the tree**
 
