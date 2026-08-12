@@ -33,14 +33,14 @@ nothing.
 2. `package.json` — remove `"@actions/github": "^6.0.0"` from
    `dependencies`.
 3. Run `npm install` to regenerate `package-lock.json`, dropping
-   `@actions/github`, `undici`, and any packages solely required by them.
+   `@actions/github` and any packages solely required by it (e.g. `@octokit/*`, `before-after-hook`, `deprecation`, `once`/`wrappy`, `universal-user-agent`).
 4. Run `npm run build` (rollup) to regenerate `dist/index.js`, since
    `action.yml` runs the bundled file (`dist/index.js`), not `src/index.js`,
    as the actual action entry point.
 
 ## Verification
 
-- `npm audit` — the undici/high-severity findings are gone.
+- `npm audit` — the `@actions/github` -> `undici` vulnerability chain is gone (separate `undici` finding via `@actions/core` remains, deferred).
 - `npm test` — existing sql-lint smoke test still passes.
 - `npm ls @actions/github` — package no longer present in the tree at all.
 - Diff `dist/index.js` to confirm the previously-bundled `github.*` code
@@ -49,6 +49,7 @@ nothing.
 ## Out of scope
 
 - `@actions/core` is untouched (still used, still needed).
+- The pre-existing high-severity `undici` finding via `@actions/core` -> `@actions/http-client` remains and is deferred (requires major version bump to `@actions/core`, outside this change's scope).
 - `sql-lint` / `mysql2` are unrelated and already patched (recent commits).
 - Dependabot config is left as-is for this change; not adding an ignore rule
   or otherwise updating it in this pass.
