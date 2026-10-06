@@ -2,6 +2,10 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
+    # These callers are versioned centrally by domutech-github.
+    exclude-paths:
+      - ".github/workflows/publish-repository-docs.yml"
+      - ".github/workflows/publish-repository-docs-catalogue.yml"
     directory: "/"
     schedule:
       interval: "cron"
